@@ -4,8 +4,6 @@ import br.com.fiap.oficina.customer.dto.request.ClienteRequestDTO;
 import br.com.fiap.oficina.customer.dto.response.ClienteResponseDTO;
 import br.com.fiap.oficina.customer.entity.Cliente;
 import br.com.fiap.oficina.customer.mapper.ClienteMapper;
-import br.com.fiap.oficina.customer.messaging.CustomerCreatedEventPublisher;
-import br.com.fiap.oficina.customer.messaging.event.CustomerCreatedEvent;
 import br.com.fiap.oficina.customer.repository.ClienteRepository;
 import br.com.fiap.oficina.customer.service.impl.ClienteServiceImpl;
 import br.com.fiap.oficina.shared.exception.RecursoNaoEncontradoException;
@@ -33,9 +31,6 @@ class ClienteServiceImplTest {
 
     @Mock
     private ClienteMapper clienteMapper;
-
-    @Mock
-    private CustomerCreatedEventPublisher customerCreatedEventPublisher;
 
     @InjectMocks
     private ClienteServiceImpl clienteService;
@@ -77,7 +72,6 @@ class ClienteServiceImplTest {
         assertEquals(1L, result.getId());
         assertEquals("João Silva", result.getNome());
         verify(clienteRepository, times(1)).save(any(Cliente.class));
-        verify(customerCreatedEventPublisher, times(1)).publish(any(CustomerCreatedEvent.class));
     }
 
     @Test

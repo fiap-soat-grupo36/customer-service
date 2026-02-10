@@ -4,8 +4,6 @@ import br.com.fiap.oficina.customer.dto.request.ClienteRequestDTO;
 import br.com.fiap.oficina.customer.dto.response.ClienteResponseDTO;
 import br.com.fiap.oficina.customer.entity.Cliente;
 import br.com.fiap.oficina.customer.mapper.ClienteMapper;
-import br.com.fiap.oficina.customer.messaging.CustomerCreatedEventPublisher;
-import br.com.fiap.oficina.customer.messaging.event.CustomerCreatedEvent;
 import br.com.fiap.oficina.customer.repository.ClienteRepository;
 import br.com.fiap.oficina.customer.service.ClienteService;
 import br.com.fiap.oficina.shared.exception.RecursoNaoEncontradoException;
@@ -24,15 +22,10 @@ public class ClienteServiceImpl implements ClienteService {
 
     private final ClienteMapper clienteMapper;
 
-    private final CustomerCreatedEventPublisher customerCreatedEventPublisher;
-
     @Autowired
-    public ClienteServiceImpl(ClienteRepository clienteRepository,
-                              ClienteMapper clienteMapper,
-                              CustomerCreatedEventPublisher customerCreatedEventPublisher) {
+    public ClienteServiceImpl(ClienteRepository clienteRepository, ClienteMapper clienteMapper) {
         this.clienteRepository = clienteRepository;
         this.clienteMapper = clienteMapper;
-        this.customerCreatedEventPublisher = customerCreatedEventPublisher;
     }
 
     @Override
@@ -50,7 +43,6 @@ public class ClienteServiceImpl implements ClienteService {
         }
 
         Cliente salvo = clienteRepository.save(entity);
-        customerCreatedEventPublisher.publish(new CustomerCreatedEvent(salvo.getId(), salvo.getNome(), salvo.getEmail()));
         return clienteMapper.toDTO(salvo);
     }
 
