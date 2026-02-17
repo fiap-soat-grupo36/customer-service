@@ -216,4 +216,3 @@ terraform.rc
 # Sensitive variable files
 *.tfvars
 *.tfvars.json
-# End of https://www.toptal.com/developers/gitignore/api/java,intellij
