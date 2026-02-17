@@ -100,5 +100,5 @@ jobs:
         
         Ready for production deployment! 🚀
       labels: '["deployment", "production", "needs-approval"]'
-      reviewers: '["tech-lead", "devops-lead"]'
+      reviewers: ''
       draft: false
