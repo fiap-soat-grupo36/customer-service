@@ -7,6 +7,9 @@ on:
 jobs:
   # 1. Build, Lint e Testes Unitários
   build-and-test:
+    permissions:
+      contents: read
+      packages: read
     uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-java-ci.yml@main
     with:
       java_version: '21'
