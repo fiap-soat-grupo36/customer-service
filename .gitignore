@@ -143,6 +143,7 @@ fabric.properties
 hs_err_pid*
 replay_pid*
 
+# End of https://www.toptal.com/developers/gitignore/api/java,intellij
 ### IntelliJ IDEA ###
 .idea
 .idea/modules.xml
@@ -179,4 +180,3 @@ terraform.rc
 # Sensitive variable files
 *.tfvars
 *.tfvars.json
-# End of https://www.toptal.com/developers/gitignore/api/java,intellij
