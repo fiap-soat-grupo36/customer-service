@@ -17,6 +17,7 @@ jobs:
       build_command: 'mvn -B -ntp -U clean test'
       package_command: 'mvn -B -ntp -U package -DskipTests'
       upload_jacoco_reports: false
+    secrets: inherit
 
   # 2. Terraform Validate e Plan
   terraform-validation:

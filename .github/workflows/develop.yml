@@ -18,6 +18,7 @@ jobs:
       upload_jacoco_reports: true
       jacoco_artifact_name: 'jacoco-reports-${{ github.run_id }}'
       jacoco_report_path: '**/target/site/jacoco/jacoco.xml'
+    secrets: inherit
 
   # 2. SonarCloud - Cobertura de Testes
   sonar:
