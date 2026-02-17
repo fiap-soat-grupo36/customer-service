@@ -176,7 +176,3 @@ terraform.rc
 
 # Plan output
 *.tfplan
-
-# Sensitive variable files
-*.tfvars
-*.tfvars.json
