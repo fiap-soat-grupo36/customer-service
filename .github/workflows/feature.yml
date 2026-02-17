@@ -14,8 +14,8 @@ jobs:
     with:
       java_version: '21'
       skip_checkstyle: true
-      build_command: 'mvn -B -ntp clean test'
-      package_command: 'mvn -B -ntp package -DskipTests'
+      build_command: 'mvn -B -ntp -U clean test'
+      package_command: 'mvn -B -ntp -U package -DskipTests'
       upload_jacoco_reports: false
 
   # 2. Terraform Validate e Plan

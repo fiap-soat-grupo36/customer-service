@@ -14,7 +14,7 @@ jobs:
     with:
       java_version: '21'
       skip_checkstyle: true
-      build_command: 'mvn -B -ntp clean verify'
+      build_command: 'mvn -B -ntp -U clean verify'
       upload_jacoco_reports: true
       jacoco_artifact_name: 'jacoco-reports-${{ github.run_id }}'
       jacoco_report_path: '**/target/site/jacoco/jacoco.xml'
