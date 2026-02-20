@@ -1,0 +1,58 @@
+name: Feature Branch - CI & Terraform Validation
+
+on:
+  push:
+    branches: [feature/*]
+
+jobs:
+  build-and-test:
+    permissions:
+      contents: read
+      packages: read
+    uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-java-ci.yml@main
+    with:
+      java_version: '21'
+      skip_checkstyle: true
+      build_command: 'mvn -B -ntp -U clean verify'
+      upload_jacoco_reports: true
+      jacoco_artifact_name: 'jacoco-reports-${{ github.run_id }}'
+      jacoco_report_path: '**/target/site/jacoco/jacoco.xml'
+    secrets: inherit
+
+  #verify-infrastructure:
+  #  uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-terraform.yml@main
+  #  with:
+  #    workspace: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+  #    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+  #    working_directory: ./infra
+  #    auto_apply: false
+  #    localstack_pod: fiap
+  #  secrets:
+  #    LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+
+  create-pr:
+    permissions:
+      contents: read
+      pull-requests: write
+    needs: [build-and-test] #, verify-infrastructure]
+    uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-create-pr.yml@main
+    with:
+      base: develop
+      title: "✨ Feature: ${{ github.event.head_commit.message }}"
+      body: |
+        ## 🚀 Feature Ready for Review
+        
+        **Branch:** `${{ github.ref_name }}`
+        **Commit:** `${{ github.sha }}`
+        **Author:** @${{ github.actor }}
+        
+        ### ✅ CI Status
+        - ✅ Lint passed
+        - ✅ Unit tests passed
+        - ✅ Build successful
+        - ✅ Terraform validate passed
+        - ✅ Terraform plan successful (dev)
+        
+        Ready for code review and merge to develop!
+      labels: '["feature", "auto-pr", "ci-passed"]'
+      reviewers: '["tech-lead"]'

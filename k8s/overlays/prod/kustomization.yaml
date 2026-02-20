@@ -1,0 +1,281 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace para ambiente PROD no EKS (gerenciado pelo Terraform)
+namespace: oficina-mecanica-prod
+
+  # Base resources (exceto postgres - usa RDS no EKS)
+
+  # Prod-specific resources
+resources:
+- ../../base
+- ingress.yaml
+
+# Sobrescrever tags das imagens para usar 'main' em produção
+images:
+- name: grecomilani/auth-service
+  newName: grecomilani/auth-service
+  newTag: develop
+- name: grecomilani/budget-service
+  newName: grecomilani/budget-service
+  newTag: develop
+- name: grecomilani/catalog-service
+  newName: grecomilani/catalog-service
+  newTag: develop
+- name: grecomilani/customer-service
+  newName: grecomilani/customer-service
+  newTag: develop
+- name: grecomilani/eureka-server
+  newName: grecomilani/eureka-server
+  newTag: develop
+- name: grecomilani/inventory-service
+  newName: grecomilani/inventory-service
+  newTag: develop
+- name: grecomilani/notification-service
+  newName: grecomilani/notification-service
+  newTag: develop
+- name: grecomilani/work-order-service
+  newName: grecomilani/work-order-service
+  newTag: develop
+
+# Exclui PostgreSQL e ConfigMap dos recursos base (gerenciados pelo Terraform)
+  # Remove postgres StatefulSet
+  # Remove ConfigMap (gerenciado pelo Terraform no EKS)
+  # Remove postgres Service
+  # Remove ConfigMap (gerenciado por configmap.tf)
+  # Garantir que imagens sempre sejam puxadas (importante em prod para atualizações)
+  # Eureka Server - 1 replica em PROD
+  # Eureka NLB - usar internet-facing para PROD
+  # Aumentar resources para produção - serviços básicos (igual dev)
+  # Serviços críticos (auth, customer) em produção (igual dev)
+  # Notification service precisa de mais CPU para processar eventos em produção (igual dev)
+  # Aumentar resources do Eureka em produção (serviço crítico, igual dev)
+  # Ajustar HPA para produção (min 1, max 3, threshold 80%)
+  # Adicionar variável API_GATEWAY_BASE_URL do ConfigMap
+  # Adicionar labels do Datadog para tagueamento correto
+patches:
+- patch: |-
+    apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: postgres
+    $patch: delete
+  target:
+    kind: StatefulSet
+    name: postgres
+- patch: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: oficina-shared-config
+    $patch: delete
+  target:
+    kind: ConfigMap
+    name: oficina-shared-config
+- patch: |-
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: postgres
+    $patch: delete
+  target:
+    kind: Service
+    name: postgres
+- patch: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: oficina-shared-config
+    $patch: delete
+  target:
+    kind: ConfigMap
+    name: oficina-shared-config
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/imagePullPolicy
+      value: Always
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+  target:
+    kind: Deployment
+    name: eureka-server
+- patch: |-
+    - op: replace
+      path: /metadata/annotations/service.beta.kubernetes.io~1aws-load-balancer-scheme
+      value: internet-facing
+  target:
+    kind: Service
+    name: eureka-server-nlb
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 100m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: 384Mi
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 1000m
+  target:
+    kind: Deployment
+    name: (catalog-service|inventory-service|budget-service|work-order-service)
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 100m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: 384Mi
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 1000m
+  target:
+    kind: Deployment
+    name: (auth-service|customer-service)
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 100m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: 384Mi
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 1000m
+  target:
+    kind: Deployment
+    name: notification-service
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 100m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: 384Mi
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 1000m
+  target:
+    kind: Deployment
+    name: eureka-server
+- patch: |-
+    - op: replace
+      path: /spec/minReplicas
+      value: 1
+    - op: replace
+      path: /spec/maxReplicas
+      value: 3
+    - op: replace
+      path: /spec/metrics/0/resource/target/averageUtilization
+      value: 80
+  target:
+    kind: HorizontalPodAutoscaler
+    name: (auth-service-hpa|customer-service-hpa|catalog-service-hpa|inventory-service-hpa|budget-service-hpa|work-order-service-hpa|notification-service-hpa)
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value:
+        name: API_GATEWAY_BASE_URL
+        valueFrom:
+          configMapKeyRef:
+            name: oficina-shared-config
+            key: API_GATEWAY_BASE_URL
+  target:
+    kind: Deployment
+    name: (auth-service|customer-service|catalog-service|inventory-service|budget-service|work-order-service|notification-service|eureka-server)
+- patch: |-
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+      value: prod
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+      value: auth-service
+  target:
+    kind: Deployment
+    name: auth-service
+- patch: |-
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+      value: prod
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+      value: customer-service
+  target:
+    kind: Deployment
+    name: customer-service
+- patch: |-
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+      value: prod
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+      value: catalog-service
+  target:
+    kind: Deployment
+    name: catalog-service
+- patch: |-
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+      value: prod
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+      value: inventory-service
+  target:
+    kind: Deployment
+    name: inventory-service
+- patch: |-
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+      value: prod
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+      value: budget-service
+  target:
+    kind: Deployment
+    name: budget-service
+- patch: |-
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+      value: prod
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+      value: work-order-service
+  target:
+    kind: Deployment
+    name: work-order-service
+- patch: |-
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+      value: prod
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+      value: notification-service
+  target:
+    kind: Deployment
+    name: notification-service
+- patch: |-
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+      value: prod
+    - op: add
+      path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+      value: eureka-server
+  target:
+    kind: Deployment
+    name: eureka-server
+
+# Labels comuns para ambiente PROD
+commonLabels:
+  deployed-via: kustomize
+  environment: prod
+  managed-by: terraform
+
+# Annotations comuns
+commonAnnotations:
+  cluster: eks-fiap-oficina-mecanica
+  criticality: high
+  deployment-method: terraform-eks
