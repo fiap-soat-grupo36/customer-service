@@ -31,6 +31,9 @@ jobs:
   #    LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
 
   create-pr:
+    permissions:
+      contents: read
+      pull-requests: write
     needs: [build-and-test] #, verify-infrastructure]
     uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-create-pr.yml@main
     with:
