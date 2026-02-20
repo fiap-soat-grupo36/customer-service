@@ -6,8 +6,6 @@ on:
 
 jobs:
   build-and-test:
-    needs: service-readiness
-    if: ${{ needs.service-readiness.outputs.ready == 'true' }}
     permissions:
       contents: read
       packages: read
@@ -35,7 +33,6 @@ jobs:
 
   docker:
     needs: [build-and-test, sonar]
-    if: ${{ needs.service-readiness.outputs.ready == 'true' }}
     uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-dockerhub.yml@main
     with:
       modules: '["customer-service"]'
@@ -74,6 +71,9 @@ jobs:
 
   create-pr-to-main:
     #needs: deploy-dev
+    permissions:
+      contents: read
+      pull-requests: write
     uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-create-pr.yml@main
     with:
       base: main

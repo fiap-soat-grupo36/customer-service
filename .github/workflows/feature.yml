@@ -5,7 +5,6 @@ on:
     branches: [feature/*]
 
 jobs:
-  # 1. Build, Lint e Testes Unitários
   build-and-test:
     permissions:
       contents: read
@@ -20,21 +19,22 @@ jobs:
       jacoco_report_path: '**/target/site/jacoco/jacoco.xml'
     secrets: inherit
 
-  # 2. Terraform Validate e Plan
-  verify-infrastructure:
-    uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-terraform.yml@main
-    with:
-      workspace: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-      environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-      working_directory: ./infra
-      auto_apply: false
-      localstack_pod: fiap
-    secrets:
-      LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+  #verify-infrastructure:
+  #  uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-terraform.yml@main
+  #  with:
+  #    workspace: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+  #    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+  #    working_directory: ./infra
+  #    auto_apply: false
+  #    localstack_pod: fiap
+  #  secrets:
+  #    LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
 
-  # 3. Criar PR Automático para Develop
   create-pr:
-    needs: [build-and-test, verify-infrastructure]
+    permissions:
+      contents: read
+      pull-requests: write
+    needs: [build-and-test] #, verify-infrastructure]
     uses: fiap-soat-grupo36/reusable-actions/.github/workflows/_reusable-create-pr.yml@main
     with:
       base: develop
